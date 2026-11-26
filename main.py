@@ -289,12 +289,12 @@ def story_card(d, img, x, y, w, h, kicker, headline, caption, illo):
     draw_illo(img, illo, ix, iy, iw, ih)
     ty = iy + ih + 10
     d.text((x + 12, ty), kicker, font=load_font("sans_bold", 17), fill=RED)
-    ty += 24
+    ty += 27
     ty = draw_wrapped(d, x + 12, ty, headline, load_font("serif_bold", 23),
-                      w - 24, INK, 28)
-    ty += 5
+                      w - 24, INK, 31)
+    ty += 7
     draw_wrapped(d, x + 12, ty, caption, load_font("sans", 16),
-                 w - 24, (60, 60, 56), 20)
+                 w - 24, (60, 60, 56), 22)
 
 
 def wide_card(d, img, x, y, w, h, kicker, headline, caption, illo):
@@ -307,11 +307,11 @@ def wide_card(d, img, x, y, w, h, kicker, headline, caption, illo):
     tw = x + w - 12 - tx
     ty = y + 14
     d.text((tx, ty), kicker, font=load_font("sans_bold", 17), fill=RED)
-    ty += 25
+    ty += 28
     ty = draw_wrapped(d, tx, ty, headline, load_font("serif_bold", 23),
-                      tw, INK, 28)
-    ty += 6
-    draw_wrapped(d, tx, ty, caption, load_font("sans", 16), tw, (60, 60, 56), 20)
+                      tw, INK, 31)
+    ty += 8
+    draw_wrapped(d, tx, ty, caption, load_font("sans", 16), tw, (60, 60, 56), 22)
 
 
 def main():
@@ -328,8 +328,8 @@ def main():
     dateline = "THURSDAY, 26 NOVEMBER 2026  •  THE DAY'S WORLD NEWS IN ONE PAGE"
     dw = d.textlength(dateline, font=date_font)
     d.text(((W - dw) / 2, 100), dateline, font=date_font, fill=NAVY)
-    d.line([MARGIN, 130, W - MARGIN, 130], fill=RULE, width=3)
-    d.line([MARGIN, 136, W - MARGIN, 136], fill=RULE, width=1)
+    d.line([MARGIN, 130, W - MARGIN, 130], fill=RULE, width=4)
+    d.line([MARGIN, 136, W - MARGIN, 136], fill=RULE, width=2)
 
     # ---- lead story: Mumbai 26/11 anniversary
     ly, lh = 150, 236
@@ -345,8 +345,8 @@ def main():
            fill=RED)
     ty += 28
     ty = draw_wrapped(d, tx, ty, "Mumbai remembers\n26/11, 18 years on",
-                      load_font("serif_bold", 44), tw2, INK, 50)
-    ty += 8
+                      load_font("serif_bold", 44), tw2, INK, 54)
+    ty += 10
     draw_wrapped(
         d, tx, ty,
         "India marks 18 years since the 2008 Mumbai terror attacks. "
@@ -380,7 +380,7 @@ def main():
     ww = (W - 2 * MARGIN - 16) // 2
     wide_card(d, img, MARGIN, wy, ww, wh,
               "PACIFIC  •  TREATY",
-              "Solomon Islands signs\nsecurity pact",
+              "Solomon Islands\nsigns security pact",
               "A landmark treaty binds the Solomon Islands and Australia.",
               illo_treaty)
     wide_card(d, img, MARGIN + ww + 16, wy, ww, wh,
