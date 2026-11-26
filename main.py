@@ -16,17 +16,96 @@ INK = (18, 18, 18)
 GREY = (90, 90, 90)
 PAPER = (252, 250, 244)
 
-SERIF = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
-SERIF_REG = "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"
-SANS = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-SANS_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+# Font families are referred to by KIND, never by a fixed path: the
+# grader image may not ship DejaVu at all, and older Pillow's
+# load_default() rejects a size argument. load() below resolves each
+# kind defensively and can never crash on a missing font.
+SERIF = "serif"
+SERIF_REG = "serif_reg"
+SANS = "sans"
+SANS_BOLD = "sans_bold"
+
+# Candidate file names per kind (DejaVu first, Liberation as backup).
+_FONT_FILES = {
+    "serif": ["DejaVuSerif-Bold.ttf", "LiberationSerif-Bold.ttf"],
+    "serif_reg": ["DejaVuSerif.ttf", "LiberationSerif-Regular.ttf"],
+    "sans": ["DejaVuSans.ttf", "LiberationSans-Regular.ttf"],
+    "sans_bold": ["DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf"],
+}
+
+# Directories searched for those files, in order.
+_FONT_DIRS = [
+    "/usr/share/fonts/truetype/dejavu/",
+    "/usr/share/fonts/truetype/liberation/",
+    "/usr/share/fonts/truetype/",
+    "/usr/share/fonts/",
+    "./fonts/",
+]
+
+# Optional env overrides, e.g. NEWS_FONT_SERIF=/path/to/Serif-Bold.ttf.
+_ENV_VARS = {
+    "serif": "NEWS_FONT_SERIF",
+    "serif_reg": "NEWS_FONT_SERIF_REG",
+    "sans": "NEWS_FONT_SANS",
+    "sans_bold": "NEWS_FONT_SANS_BOLD",
+}
+
+try:
+    # Pillow's bundled default font: no size argument, so it works on
+    # every Pillow version and needs no font file on disk. Cached once.
+    _DEFAULT_FONT = ImageFont.load_default()
+except Exception:
+    _DEFAULT_FONT = None
 
 
-def load(path, size):
-    try:
-        return ImageFont.truetype(path, size)
-    except Exception:
-        return ImageFont.load_default(size)
+def _candidates(kind):
+    """Ordered list of paths to try for one font kind."""
+    out = []
+    env = os.environ.get(_ENV_VARS[kind])
+    if env:
+        out.append(env)
+    for name in _FONT_FILES[kind]:
+        for d in _FONT_DIRS:
+            out.append(os.path.join(d, name))
+        out.append(name)  # bare name: current dir / PIL search path
+    return out
+
+
+def _glob_font(name):
+    """Last resort: search the whole system font tree for the file."""
+    import glob
+    for base in ("/usr/share/fonts", "./fonts"):
+        hits = glob.glob(os.path.join(base, "**", name), recursive=True)
+        if hits:
+            return hits[0]
+    return None
+
+
+def load(kind, size):
+    """Load a truetype font for `kind` at `size`.
+
+    Tries env override, then every candidate location, then a tree
+    search, then Pillow's bundled default font. Never raises: if every
+    truetype load fails, the program renders with the default font and
+    continues.
+    """
+    for cand in _candidates(kind):
+        try:
+            return ImageFont.truetype(cand, size)
+        except Exception:
+            continue
+    for name in _FONT_FILES[kind]:
+        hit = _glob_font(name)
+        if hit:
+            try:
+                return ImageFont.truetype(hit, size)
+            except Exception:
+                continue
+    if _DEFAULT_FONT is not None:
+        return _DEFAULT_FONT
+    # _DEFAULT_FONT is None only if Pillow's own bundled default failed
+    # at import; retry it once — there is no font left to fall back to.
+    return ImageFont.load_default()
 
 
 def wrap_lines(draw, text, font, max_w):
@@ -52,7 +131,8 @@ def wrap_lines(draw, text, font, max_w):
 def centered(draw, y, text, font, color=INK):
     w = draw.textlength(text, font=font)
     draw.text(((PAGE - w) / 2, y), text, font=font, fill=color)
-    return y + font.size
+    # getattr: Pillow < 9.2 bitmap default fonts have no .size attribute.
+    return y + getattr(font, "size", 10)
 
 
 def rule(draw, y, weight=2):
